@@ -1,975 +1,861 @@
 // ==UserScript==
-// @name        AposBot
-// @namespace   AposBot
-// @include     http://agar.io/
-// @version     3.03
-// @grant       none
+// @name         AGARIO EXTENDED
+// @namespace    http://andrielkoromi.blogspot.com.br/
+// @version      0.2
+// @description  Cor Das Células Código Inimigo. Ativar Zoom. Mostrar Fronteiras, Tamanho Oponente, Minimap
+// @author       AndrielKoRoMi
+// @require      https://code.jquery.com/jquery-latest.js
+// @match        http://agar.io/
+// @grant        none
 // ==/UserScript==
 
+var show_targeting_colors = true;
+var allow_zoom = true;
+var show_borders = true;
+var show_opponent_size = true;
+var show_minimap = false;
 
-Number.prototype.mod = function(n) {
-    return ((this % n) + n) % n;
-};
+var map = null;
+var last = {'x':0, 'y':0, 'color':'#000000', 'size':200};
 
-Array.prototype.peek = function() {
-    return this[this.length - 1];
+function CenterOfMass(cells, prop){
+    var n = 0;
+    var d = 0;
+    for (var i in cells){
+        n += cells[i].size*cells[i].size * cells[i][prop];
+        d += cells[i].size*cells[i].size;
+    }
+    return n/d;
 }
 
-console.log("Running Apos Bot!");
-(function(f, g) {
-    console.log("Apos Bot!");
+function DrawBorders(c, dark)
+{
+       if (show_borders){
+            c.strokeStyle = dark ? "#FFFFFF" : "#000000";
+            c.beginPath();
+            c.moveTo(0, 0), c.lineTo(11180, 0), c.lineTo(11180, 11180), c.lineTo(0, 11180), c.lineTo(0, 0);
+            c.stroke();
+        }        
+}
 
-    if (f.botList == null) {
-        f.botList = [];
-        g('#locationUnknown').append(g('<select id="bList" class="form-control" onchange="setBotIndex($(this).val());" />'));
-        g('#locationUnknown').addClass('form-group');
-    }
+function DrawMinimap(oc, cells) {
+    
+}    
 
-    f.botList.push(["AposBot", findDestination]);
 
-    var bList = g('#bList');
-    g('<option />', {value: (f.botList.length - 1), text: "AposBot"}).appendTo(bList);
 
-    //Given an angle value that was gotten from valueAndleBased(),
-    //returns a new value that scales it appropriately.
-    function paraAngleValue(angleValue, range) {
-        return (15 / (range[1])) * (angleValue * angleValue) - (range[1] / 6);
-    }
-
-    function valueAngleBased(angle, range) {
-        var leftValue = (angle - range[0]).mod(360);
-        var rightValue = (rangeToAngle(range) - angle).mod(360);
-
-        var bestValue = Math.min(leftValue, rightValue);
-
-        if (bestValue <= range[1]) {
-            return paraAngleValue(bestValue, range);
-        }
-        var banana = -1;
-        return banana;
-
-    }
-
-    function computeDistance(x1, y1, x2, y2) {
-        var xdis = x1 - x2; // <--- FAKE AmS OF COURSE!
-        var ydis = y1 - y2;
-        var distance = Math.sqrt(xdis * xdis + ydis * ydis);
-
-        return distance;
-    }
-
-    function computerDistanceFromCircleEdge(x1, y1, x2, y2, s2) {
-        var tempD = computeDistance(x2, y2, x1, y1);
-
-        var offsetX = 0;
-        var offsetY = 0;
-
-        var ratioX = tempD / (x2 - x1);
-        var ratioY = tempD / (y2 - y1);
-
-        offsetX = x2 - (s2 / ratioX);
-        offsetY = y2 - (s2 / ratioY);
-
-        return computeDistance(x1, y1, offsetX, offsetY);
-    }
-
-    function getListBasedOnFunction(booleanFunction, listToUse) {
-        var dotList = [];
-        var interNodes = getMemoryCells();
-        Object.keys(listToUse).forEach(function(element, index) {
-            if (booleanFunction(element)) {
-                dotList.push(interNodes[element]);
-            }
-        });
-
-        return dotList;
-    }
-
-    function processEverything(listToUse) {
-        Object.keys(listToUse).forEach(function(element, index) {
-            computeAngleRanges(listToUse[element], getPlayer()[0]);
-        });
-    }
-
-    //TODO: Make it only go to a virus if it's big enough. If it shrinks, it shouldn't only grab a single dot and go back in.
-    function getAllNiceViruses() {
-        var dotList = [];
-        var player = getPlayer();
-        var interNodes = getMemoryCells();
-
-        if (player.length == 1) {
-            dotList = getListBasedOnFunction(function(element) {
-                if (interNodes[element].isVirus && (interNodes[element].size * 1.10 <= player[0].size) && interNodes[element].size * 1.15 >= player[0].size) {
-                    return true;
-                }
-                return false;
-            }, interNodes);
-        }
-
-        return dotList;
-    }
-
-    function getAllThreats() {
-        var dotList = [];
-        var player = getPlayer();
-        var interNodes = getMemoryCells();
-
-        dotList = getListBasedOnFunction(function(element) {
-            var isMe = false;
-
-            for (var i = 0; i < player.length; i++) {
-                if (interNodes[element].id == player[i].id) {
-                    isMe = true;
-                    break;
+(function(f, l) {
+    function Ta() {
+        ma = !0;
+        Ba();
+        setInterval(Ba, 18E4);
+        C = na = document.getElementById("canvas");
+        g = C.getContext("2d");
+        C.onmousedown = function(a) {
+            if (Ca) {
+                var b = a.clientX - (5 + r / 5 / 2),
+                    c = a.clientY - (5 + r / 5 / 2);
+                if (Math.sqrt(b * b + c * c) <= r / 5 / 2) {
+                    L();
+                    D(17);
+                    return
                 }
             }
-
-            for (var i = 0; i < player.length; i++) {
-                if (!isMe && (!interNodes[element].isVirus && (interNodes[element].size >= player[i].oSize * 1.15))) {
-                    return true;
-                } else if (interNodes[element].isVirus && (interNodes[element].size * 1.15 <= player[i].oSize)) {
-                    return true;
-                }
-                return false;
-            }
-        }, interNodes);
-
-        return dotList;
-    }
-
-    function getAllFood() {
-        var elementList = [];
-        var dotList = [];
-        var player = getPlayer();
-        var interNodes = getMemoryCells();
-
-        elementList = getListBasedOnFunction(function(element) {
-            var isMe = false;
-
-            for (var i = 0; i < player.length; i++) {
-                if (interNodes[element].id == player[i].id) {
-                    isMe = true;
-                    break;
-                }
-            }
-
-            for (var i = 0; i < player.length; i++) {
-                if (!isMe && !interNodes[element].isVirus && (interNodes[element].size * 1.25 <= player[i].size) || (interNodes[element].size <= 11)) {
-                    return true;
-                } else {
-                    return false;
-                }
-            }
-        }, interNodes);
-
-        for (var i = 0; i < elementList.length; i++) {
-            dotList.push([elementList[i].x, elementList[i].y, elementList[i].size]);
-        }
-
-        return dotList;
-    }
-
-    function clusterFood(foodList, blobSize) {
-        var clusters = [];
-        var addedCluster = false;
-
-        //1: x
-        //2: y
-        //3: size or value
-        //4: Angle, not set here.
-
-        for (var i = 0; i < foodList.length; i++) {
-            for (var j = 0; j < clusters.length; j++) {
-                if (computeDistance(foodList[i][0], foodList[i][1], clusters[j][0], clusters[j][1]) < blobSize * 1.5) {
-                    clusters[j][0] = (foodList[i][0] + clusters[j][0]) / 2;
-                    clusters[j][1] = (foodList[i][1] + clusters[j][1]) / 2;
-                    clusters[j][2] += foodList[i][2];
-                    addedCluster = true;
-                    break;
-                }
-            }
-            if (!addedCluster) {
-                clusters.push([foodList[i][0], foodList[i][1], foodList[i][2], 0]);
-            }
-            addedCluster = false;
-        }
-        return clusters;
-    }
-
-    function getAngle(x1, y1, x2, y2) {
-        //Handle vertical and horizontal lines.
-
-        if (x1 == x2) {
-            if (y1 < y2) {
-                return 271;
-                //return 89;
-            } else {
-                return 89;
-            }
-        }
-
-        return (Math.round(Math.atan2(-(y1 - y2), -(x1 - x2)) / Math.PI * 180 + 180));
-    }
-
-    function slope(x1, y1, x2, y2) {
-        var m = (y1 - y2) / (x1 - x2);
-
-        return m;
-    }
-
-    function slopeFromAngle(degree) {
-        if (degree == 270) {
-            degree = 271;
-        } else if (degree == 90) {
-            degree = 91;
-        }
-        return Math.tan((degree - 180) / 180 * Math.PI);
-    }
-
-    //Given two points on a line, finds the slope of a perpendicular line crossing it.
-    function inverseSlope(x1, y1, x2, y2) {
-        var m = slope(x1, y1, x2, y2);
-        return (-1) / m;
-    }
-
-    //Given a slope and an offset, returns two points on that line.
-    function pointsOnLine(slope, useX, useY, distance) {
-        var b = useY - slope * useX;
-        var r = Math.sqrt(1 + slope * slope);
-
-        var newX1 = (useX + (distance / r));
-        var newY1 = (useY + ((distance * slope) / r));
-        var newX2 = (useX + ((-distance) / r));
-        var newY2 = (useY + (((-distance) * slope) / r));
-
-        return [
-            [newX1, newY1],
-            [newX2, newY2]
-        ];
-    }
-
-    function followAngle(angle, useX, useY, distance) {
-        var slope = slopeFromAngle(angle);
-        var coords = pointsOnLine(slope, useX, useY, distance);
-
-        var side = (angle - 90).mod(360);
-        if (side < 180) {
-            return coords[1];
-        } else {
-            return coords[0];
-        }
-    }
-
-    //Using a line formed from point a to b, tells if point c is on S side of that line.
-    function isSideLine(a, b, c) {
-        if ((b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]) > 0) {
-            return true;
-        }
-        return false;
-    }
-
-    //angle range2 is within angle range2
-    //an Angle is a point and a distance between an other point [5, 40]
-    function angleRangeIsWithin(range1, range2) {
-        if (range2[0] == (range2[0] + range2[1]).mod(360)) {
-            return true;
-        }
-        //console.log("r1: " + range1[0] + ", " + range1[1] + " ... r2: " + range2[0] + ", " + range2[1]);
-
-        var distanceFrom0 = (range1[0] - range2[0]).mod(360);
-        var distanceFrom1 = (range1[1] - range2[0]).mod(360);
-
-        if (distanceFrom0 < range2[1] && distanceFrom1 < range2[1] && distanceFrom0 < distanceFrom1) {
-            return true;
-        }
-        return false;
-    }
-
-    function angleRangeIsWithinInverted(range1, range2) {
-        var distanceFrom0 = (range1[0] - range2[0]).mod(360);
-        var distanceFrom1 = (range1[1] - range2[0]).mod(360);
-
-        if (distanceFrom0 < range2[1] && distanceFrom1 < range2[1] && distanceFrom0 > distanceFrom1) {
-            return true;
-        }
-        return false;
-    }
-
-    function angleIsWithin(angle, range) {
-        var diff = (rangeToAngle(range) - angle).mod(360);
-        if (diff >= 0 && diff <= range[1]) {
-            return true;
-        }
-        return false;
-    }
-
-    function rangeToAngle(range) {
-        return (range[0] + range[1]).mod(360);
-    }
-
-    function anglePair(range) {
-        return (range[0] + ", " + rangeToAngle(range) + " range: " + range[1]);
-    }
-
-    function computeAngleRanges(blob1, blob2) {
-        var mainAngle = getAngle(blob1.x, blob1.y, blob2.x, blob2.y);
-        var leftAngle = (mainAngle - 90).mod(360);
-        var rightAngle = (mainAngle + 90).mod(360);
-
-        var blob1Left = followAngle(leftAngle, blob1.x, blob1.y, blob1.size);
-        var blob1Right = followAngle(rightAngle, blob1.x, blob1.y, blob1.size);
-
-        var blob2Left = followAngle(rightAngle, blob2.x, blob2.y, blob2.size);
-        var blob2Right = followAngle(leftAngle, blob2.x, blob2.y, blob2.size);
-
-        var blob1AngleLeft = getAngle(blob2.x, blob2.y, blob1Left[0], blob1Left[1]);
-        var blob1AngleRight = getAngle(blob2.x, blob2.y, blob1Right[0], blob1Right[1]);
-
-        var blob2AngleLeft = getAngle(blob1.x, blob1.y, blob2Left[0], blob2Left[1]);
-        var blob2AngleRight = getAngle(blob1.x, blob1.y, blob2Right[0], blob2Right[1]);
-
-        var blob1Range = (blob1AngleRight - blob1AngleLeft).mod(360);
-        var blob2Range = (blob2AngleRight - blob2AngleLeft).mod(360);
-
-        var tempLine = followAngle(blob2AngleLeft, blob2Left[0], blob2Left[1], 400);
-        //drawLine(blob2Left[0], blob2Left[1], tempLine[0], tempLine[1], 0);
-
-        if ((blob1Range / blob2Range) > 1) {
-            drawPoint(blob1Left[0], blob1Left[1], 3, "");
-            drawPoint(blob1Right[0], blob1Right[1], 3, "");
-            drawPoint(blob1.x, blob1.y, 3, "" + blob1Range + ", " + blob2Range + " R: " + (Math.round((blob1Range / blob2Range) * 1000) / 1000));
-        }
-
-        //drawPoint(blob2.x, blob2.y, 3, "" + blob1Range);
-    }
-
-    function debugAngle(angle, text) {
-        var player = getPlayer();
-        var line1 = followAngle(angle, player[0].x, player[0].y, 300);
-        drawLine(player[0].x, player[0].y, line1[0], line1[1], 5);
-        drawPoint(line1[0], line1[1], 5, "" + text);
-    }
-
-    function getEdgeLinesFromPoint(blob1, blob2) {
-        // find tangents
-        // 
-        // TODO: DON'T FORGET TO HANDLE IF BLOB1'S CENTER POINT IS INSIDE BLOB2!!!
-        var px = blob1.x;
-        var py = blob1.y;
-
-        var cx = blob2.x;
-        var cy = blob2.y;
-
-        var radius = blob2.size;
-
-        var shouldInvert = false;
-
-        if (computeDistance(px, py, cx, cy) <= radius) {
-            radius = computeDistance(px, py, cx, cy) - 1;
-            shouldInvert = true;
-        }
-
-        var dx = cx - px;
-        var dy = cy - py;
-        var dd = Math.sqrt(dx * dx + dy * dy);
-        var a = Math.asin(radius / dd);
-        var b = Math.atan2(dy, dx);
-
-        var t = b - a
-        var ta = {
-            x: radius * Math.sin(t),
-            y: radius * -Math.cos(t)
+            U = a.clientX;
+            V = a.clientY;
+            oa();
+            L()
         };
-
-        t = b + a
-        var tb = {
-            x: radius * -Math.sin(t),
-            y: radius * Math.cos(t)
+        C.onmousemove = function(a) {
+            U = a.clientX;
+            V = a.clientY;
+            oa()
         };
-
-        var angleLeft = getAngle(cx + ta.x, cy + ta.y, px, py);
-        var angleRight = getAngle(cx + tb.x, cy + tb.y, px, py);
-        var angleDistance = (angleRight - angleLeft).mod(360);
-
-        return [angleLeft, angleDistance, [cx + tb.x, cy + tb.y],
-            [cx + ta.x, cy + ta.y]
-        ];
+        C.onmouseup = function() {};
+        /firefox/i.test(navigator.userAgent) ? document.addEventListener("DOMMouseScroll", Da, !1) : document.body.onmousewheel = Da;
+        var a = !1,
+            b = !1,
+            c = !1;
+        f.onkeydown = function(d) {
+            32 != d.keyCode || a || (L(), D(17), a = !0);
+            81 != d.keyCode || b || (D(18), b = !0);
+            87 != d.keyCode || c || (L(), D(21), c = !0);
+            27 == d.keyCode && Ea(!0)
+        };
+        f.onkeyup = function(d) {
+            32 == d.keyCode && (a = !1);
+            87 == d.keyCode && (c = !1);
+            81 == d.keyCode && b && (D(19), b = !1)
+        };
+        f.onblur = function() {
+            D(19);
+            c = b = a = !1
+        };
+        f.onresize = Fa;
+        Fa();
+        f.requestAnimationFrame ? f.requestAnimationFrame(Ga) : setInterval(pa, 1E3 / 60);
+        setInterval(L, 40);
+        w && l("#region").val(w);
+        Ha();
+        W(l("#region").val());
+        null == q && w && X();
+        l("#overlays").show()
     }
 
-    function invertAngle(range) {
-        var angle1 = rangeToAngle(badAngles[i]);
-        var angle2 = (badAngles[i][0] - angle1).mod(360);
-        return [angle1, angle2];
+    function Da(a) {
+        E *= Math.pow(.9, a.wheelDelta / -120 || a.detail || 0);
+        1 > E && (E = 1);
+        E > 4 / k && (E = 4 / k)
     }
 
-    function seperateAngle(range) {
-        var angle1 = range[0];
-        var group1 = [angle1, false];
-
-        var angle2 = rangeToAngle(range);
-        var group2 = [angle2, true];
-        return [group1, group2];
+    function Ua() {
+        if (.4 > k) M = null;
+        else {
+            for (var a = Number.POSITIVE_INFINITY, b = Number.POSITIVE_INFINITY, c = Number.NEGATIVE_INFINITY, d = Number.NEGATIVE_INFINITY, e = 0, m = 0; m < v.length; m++) {
+                var h = v[m];
+                !h.J() || h.N || 20 >= h.size * k || (e = Math.max(h.size, e), a = Math.min(h.x, a), b = Math.min(h.y, b), c = Math.max(h.x, c), d = Math.max(h.y, d))
+            }
+            M = Va.ca({
+                X: a - (e + 100),
+                Y: b - (e + 100),
+                fa: c + (e + 100),
+                ga: d + (e + 100),
+                da: 2,
+                ea: 4
+            });
+            for (m = 0; m < v.length; m++)
+                if (h = v[m], h.J() && !(20 >= h.size * k))
+                    for (a = 0; a < h.a.length; ++a) b = h.a[a].x, c = h.a[a].y, b < t - r / 2 / k || c < u - s / 2 / k || b > t + r / 2 / k || c > u + s / 2 / k || M.i(h.a[a])
+        }
     }
 
-    function addSorted(listToUse, group) {
-        var isAdded = false;
-        for (var i = 0; i < listToUse.length; i++) {
-            if (group[0] < listToUse[i][0]) {
-                listToUse.splice(i, 0, group);
-                isAdded = true;
+    function oa() {
+        Y = (U - r / 2) / k + t;
+        Z = (V - s / 2) / k + u
+    }
+
+    function Ba() {
+        null == $ && ($ = {}, l("#region").children().each(function() {
+            var a = l(this),
+                b = a.val();
+            b && ($[b] = a.text())
+        }));
+        l.get(aa + "//m.agar.io/info", function(a) {
+            var b = {},
+                c;
+            for (c in a.regions) {
+                var d = c.split(":")[0];
+                b[d] = b[d] || 0;
+                b[d] += a.regions[c].numPlayers
+            }
+            for (c in b) l('#region option[value="' + c + '"]').text($[c] + " (" + b[c] + " players)")
+        }, "json")
+    }
+
+    function Ia() {
+        l("#adsBottom").hide();
+        l("#overlays").hide();
+        Ha()
+    }
+
+    function W(a) {
+        a && a != w && (l("#region").val() != a && l("#region").val(a), w = f.localStorage.location = a, l(".region-message").hide(), l(".region-message." + a).show(), l(".btn-needs-server").prop("disabled", !1), ma && X())
+    }
+
+    function Ea(a) {
+        F = null;
+        l("#overlays").fadeIn(a ? 200 : 3E3);
+        a || l("#adsBottom").fadeIn(3E3)
+    }
+
+    function Ha() {
+        l("#region").val() ? f.localStorage.location = l("#region").val() : f.localStorage.location && l("#region").val(f.localStorage.location);
+        l("#region").val() ? l("#locationKnown").append(l("#region")) : l("#locationUnknown").append(l("#region"))
+    }
+
+    function qa() {
+        console.log("Find " + w + N);
+        l.ajax(aa + "//m.agar.io/", {
+            error: function() {
+                setTimeout(qa, 1E3)
+            },
+            success: function(a) {
+                a = a.split("\n");
+                "45.79.222.79:443" == a[0] ? qa() : Ja("ws://" + a[0])
+            },
+            dataType: "text",
+            method: "POST",
+            cache: !1,
+            crossDomain: !0,
+            data: w + N || "?"
+        })
+    }
+
+    function X() {
+        ma && w && (l("#connecting").show(), qa())
+    }
+
+    function Ja(a) {
+        if (q) {
+            q.onopen = null;
+            q.onmessage = null;
+            q.onclose = null;
+            try {
+                q.close()
+            } catch (b) {}
+            q = null
+        }
+        var c = f.location.search.slice(1);
+        /^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+:[0-9]+$/.test(c) && (a = "ws://" + c);
+        Wa && (a = a.split(":"), a = a[0] + "s://ip-" + a[1].replace(/\./g, "-").replace(/\//g, "") + ".tech.agar.io:" + (+a[2] + 2E3));
+        G = [];
+        n = [];
+        A = {};
+        v = [];
+        I = [];
+        B = [];
+        x = y = null;
+        J = 0;
+        console.log("Connecting to " + a);
+        q = new WebSocket(a);
+        q.binaryType = "arraybuffer";
+        q.onopen = Xa;
+        q.onmessage = Ya;
+        q.onclose = Za;
+        q.onerror = function() {
+            console.log("socket error")
+        }
+    }
+
+    function O(a) {
+        return new DataView(new ArrayBuffer(a))
+    }
+
+    function P(a) {
+        q.send(a.buffer)
+    }
+
+    function Xa() {
+        var a;
+        ba = 500;
+        l("#connecting").hide();
+        console.log("socket open");
+        a = O(5);
+        a.setUint8(0, 254);
+        a.setUint32(1, 4, !0);
+        P(a);
+        a = O(5);
+        a.setUint8(0, 255);
+        a.setUint32(1, 673720361, !0);
+        P(a);
+        Ka()
+    }
+
+    function Za() {
+        console.log("socket close");
+        setTimeout(X, ba);
+        ba *= 1.5
+    }
+
+    function Ya(a) {
+        $a(new DataView(a.data))
+    }
+
+    function $a(a) {
+        function b() {
+            for (var b = "";;) {
+                var d = a.getUint16(c, !0);
+                c += 2;
+                if (0 == d) break;
+                b += String.fromCharCode(d)
+            }
+            return b
+        }
+        var c = 0;
+        240 == a.getUint8(c) && (c += 5);
+        switch (a.getUint8(c++)) {
+            case 16:
+                ab(a, c);
                 break;
-            }
+            case 17:
+                Q = a.getFloat32(c, !0);
+                c += 4;
+                R = a.getFloat32(c, !0);
+                c += 4;
+                S = a.getFloat32(c, !0);
+                c += 4;
+                break;
+            case 20:
+                n = [];
+                G = [];
+                break;
+            case 21:
+                ra = a.getInt16(c, !0);
+                c += 2;
+                sa = a.getInt16(c, !0);
+                c += 2;
+                ta || (ta = !0, ca = ra, da = sa);
+                break;
+            case 32:
+                G.push(a.getUint32(c, !0));
+                c += 4;
+                break;
+            case 49:
+                if (null != y) break;
+                var d = a.getUint32(c, !0),
+                    c = c + 4;
+                B = [];
+                for (var e = 0; e < d; ++e) {
+                    var m = a.getUint32(c, !0),
+                        c = c + 4;
+                    B.push({
+                        id: m,
+                        name: b()
+                    })
+                }
+                La();
+                break;
+            case 50:
+                y = [];
+                d = a.getUint32(c, !0);
+                c += 4;
+                for (e = 0; e < d; ++e) y.push(a.getFloat32(c, !0)), c += 4;
+                La();
+                break;
+            case 64:
+                ea = a.getFloat64(c, !0), c += 8, fa = a.getFloat64(c, !0), c += 8, ga = a.getFloat64(c, !0), c += 8, ha = a.getFloat64(c, !0), c += 8, Q = (ga + ea) / 2, R = (ha + fa) / 2, S = 1, 0 == n.length && (t = Q, u = R, k = S)
         }
-
-        if (!isAdded) {
-            listToUse.push(group);
-        }
-        return listToUse;
     }
 
-    function removeDuplicates(listToUse) {
-        if (listToUse.length > 0) {
-            var lastValue = listToUse[0][0];
-            var seriesStartIndex = -1;
-            var removeFirst = false;
-
-            var sortedLength = listToUse.length;
-            var i = 1;
-            while (i < sortedLength) {
-                if (lastValue == listToUse[i][0]) {
-                    if (seriesStartIndex == -1) {
-                        seriesStartIndex = i - 1;
-                    }
-
-                    if (listToUse[seriesStartIndex][1] != listToUse[i][1]) {
-                        removeFirst = true;
-                    }
-                    listToUse.splice(i, 1);
-                    sortedLength--;
-                    i--;
-
-                } else {
-                    if (removeFirst) {
-                        listToUse.splice(seriesStartIndex, 1);
-                        sortedLength--;
-                        i--;
-                        removeFirst = false;
-                    }
-                    seriesStartIndex = -1;
-
-                    lastValue = listToUse[i][0];
-                }
-                i++;
-            }
+    function ab(a, b) {
+        H = +new Date;
+        var c = Math.random();
+        ua = !1;
+        var d = a.getUint16(b, !0);
+        b += 2;
+        for (var e = 0; e < d; ++e) {
+            var m = A[a.getUint32(b, !0)],
+                h = A[a.getUint32(b + 4, !0)];
+            b += 8;
+            m && h && (h.T(), h.p = h.x, h.q = h.y, h.o = h.size, h.F = m.x, h.G = m.y, h.n = h.size, h.M = H)
         }
-
-        return listToUse;
+        for (e = 0;;) {
+            d = a.getUint32(b, !0);
+            b += 4;
+            if (0 == d) break;
+            ++e;
+            var g, m = a.getInt16(b, !0);
+            b += 2;
+            h = a.getInt16(b, !0);
+            b += 2;
+            g = a.getInt16(b, !0);
+            b += 2;
+            for (var f = a.getUint8(b++), k = a.getUint8(b++), l = a.getUint8(b++), f = (f <<
+                    16 | k << 8 | l).toString(16); 6 > f.length;) f = "0" + f;
+            var f = "#" + f,
+                k = a.getUint8(b++),
+                l = !!(k & 1),
+                r = !!(k & 16);
+            k & 2 && (b += 4);
+            k & 4 && (b += 8);
+            k & 8 && (b += 16);
+            for (var q, p = "";;) {
+                q = a.getUint16(b, !0);
+                b += 2;
+                if (0 == q) break;
+                p += String.fromCharCode(q)
+            }
+            q = p;
+            p = null;
+            A.hasOwnProperty(d) ? (p = A[d], p.L(), p.p = p.x, p.q = p.y, p.o = p.size, p.color = f) : (p = new va(d, m, h, g, f, q), v.push(p), A[d] = p, p.ka = m, p.la = h);
+            p.d = l;
+            p.j = r;
+            p.F = m;
+            p.G = h;
+            p.n = g;
+            p.ja = c;
+            p.M = H;
+            p.W = k;
+            q && p.Z(q); - 1 != G.indexOf(d) && -1 == n.indexOf(p) && (document.getElementById("overlays").style.display = "none", n.push(p), 1 == n.length && (t = p.x, u = p.y))
+        }
+        c = a.getUint32(b, !0);
+        b += 4;
+        for (e = 0; e < c; e++) d = a.getUint32(b, !0), b += 4, p = A[d], null != p && p.T();
+        ua && 0 == n.length && Ea(!1)
     }
 
-    function findFirstUpArrow(listToUse) {
-        var sortedLength = listToUse.length;
-        var downArrow = false;
-
-        var recursiveList = [];
-        var recursiveCount = 0;
-
-        for (var i = 0; i < listToUse.length; i++) {
-            if (!listToUse[i][1]) {
-                recursiveCount++;
-                recursiveList.push(recursiveCount);
-            }
-            else {
-                recursiveCount--;
-                recursiveList.push(recursiveCount);
-            }
+    function L() {
+        var a;
+        if (wa()) {
+            a = U - r / 2;
+            var b = V - s / 2;
+            64 > a * a + b * b || .01 > Math.abs(Ma - Y) && .01 > Math.abs(Na - Z) || (Ma = Y, Na = Z, a = O(21), a.setUint8(0, 16), a.setFloat64(1, Y, !0), a.setFloat64(9, Z, !0), a.setUint32(17, 0, !0), P(a))
         }
-
-        var smallestCount = recursiveList[0];
-        var smallestIndex = 0;
-
-        for (var i = 1; i < recursiveList.length; i++) {
-            if (recursiveList[i] < smallestCount) {
-                smallestCount = recursiveList[i];
-                smallestIndex = i;
-            }
-        }
-
-        return smallestIndex;
     }
 
-    function mergeAngles(listToUse) {
-        var startIndex = findFirstUpArrow(listToUse);
-        var angleList = [];
-        var recursiveCount = 0;
-        if (listToUse.length > 0) {
-            var currentArrow = true;
-            var currentAngle = listToUse[startIndex][0];
-
-            for (var i = 1; i < listToUse.length; i++) {
-                //console.log("i: " + i + " length: " + listToUse.length + " offset: " + startIndex);
-                if (listToUse[(startIndex + i).mod(listToUse.length)][1] != currentArrow && !currentArrow && recursiveCount > 0) {
-                    recursiveCount--;
-                    //console.log("Unskip " + recursiveCount);
-                } else if (listToUse[(startIndex + i).mod(listToUse.length)][1] == currentArrow && currentArrow) {
-                    currentAngle = listToUse[(startIndex + i).mod(listToUse.length)][0];
-                } else if (listToUse[(startIndex + i).mod(listToUse.length)][1] != currentArrow && currentArrow) {
-                    //console.log("Add good angle: " + recursiveCount);
-                    currentArrow = false;
-                    var endAngle = listToUse[(startIndex + i).mod(listToUse.length)][0];
-                    var diff = (endAngle - currentAngle).mod(360);
-                    angleList.push([currentAngle, diff]);
-                } else if (listToUse[(startIndex + i).mod(listToUse.length)][1] != currentArrow && !currentArrow) {
-                    //console.log("Ready for take off " + recursiveCount);
-                    currentArrow = true;
-                    currentAngle = listToUse[(startIndex + i).mod(listToUse.length)][0];
-                } else if (listToUse[(startIndex + i).mod(listToUse.length)][1] == currentArrow && !currentArrow) {
-                    recursiveCount++;
-                    currentArrow = false;
-                    //console.log("Skip angle " + recursiveCount);
-                }
-                //console.log("");
-            }
-            if (currentArrow) {
-                console.log("Was this needed?");
-                var endAngle = listToUse[(startIndex - 1).mod(listToUse.length)][0];
-                var diff = (endAngle - currentAngle).mod(360);
-                angleList.push([currentAngle, diff]);
-            }
+    function Ka() {
+        if (wa() && null != F) {
+            var a = O(1 + 2 * F.length);
+            a.setUint8(0, 0);
+            for (var b = 0; b < F.length; ++b) a.setUint16(1 + 2 * b, F.charCodeAt(b), !0);
+            P(a)
         }
-        return angleList;
     }
 
-    function findDestination() {
-        var player = getPlayer();
-        var interNodes = getMemoryCells();
+    function wa() {
+        return null != q && q.readyState == q.OPEN
+    }
 
-        if ( /*!toggle*/ 1) {
-            var useMouseX = (getMouseX() - getWidth() / 2 + getX() * getRatio()) / getRatio();
-            var useMouseY = (getMouseY() - getHeight() / 2 + getY() * getRatio()) / getRatio();
-            tempPoint = [useMouseX, useMouseY, 1];
+    function D(a) {
+        if (wa()) {
+            var b = O(1);
+            b.setUint8(0, a);
+            P(b)
+        }
+    }
 
-            var tempMoveX = getPointX();
-            var tempMoveY = getPointY();
+    function Ga() {
+        pa();
+        f.requestAnimationFrame(Ga)
+    }
 
-            if (player.length > 0) {
-                //drawPoint(player[0].x, player[0].y - player[0].size, 3, "" + Math.floor(player[0].x) + ", " + Math.floor(player[0].y));
+    function Fa() {
+        r = f.innerWidth;
+        s = f.innerHeight;
+        na.width = C.width = r;
+        na.height = C.height = s;
+        pa()
+    }
 
-                //var allDots = processEverything(interNodes);
+    function Oa() {
+        var a;
+        a = 1 * Math.max(s / 1080, r / 1920);
+        return a *= E
+    }
 
-                var allPossibleFood = null;
-                allPossibleFood = getAllFood(); // #1
+    function bb() {
+        if (0 != n.length && !allow_zoom) {
+            for (var a = 0, b = 0; b < n.length; b++) a += n[b].size;
+            a = Math.pow(Math.min(64 / a, 1), .4) * Oa();
+            k = (9 * k + a) / 10
+        }
+    }
+    
+    function Zoom(e) {
+        allow_zoom && (k *= 1 + e.wheelDelta / 1e3);
+    }
+    "onwheel" in document ? document.addEventListener("wheel", Zoom) : "onmousewheel" in document ? document.addEventListener("mousewheel", Zoom) : document.addEventListener("MozMousePixelScroll", Zoom);
 
-                var allPossibleThreats = getAllThreats();
-                //console.log("Internodes: " + interNodes.length + " Food: " + allPossibleFood.length + " Threats: " + allPossibleThreats.length);
+    function pa() {
+        var a, b = Date.now();
+        ++cb;
+        H = b;
+        if (0 < n.length) {
+            bb();
+            for (var c = a = 0, d = 0; d < n.length; d++) n[d].L(),
+                a += n[d].x / n.length, c += n[d].y / n.length;
+            Q = a;
+            R = c;
+            S = k;
+            t = (t + a) / 2;
+            u = (u + c) / 2
+        } else t = (29 * t + Q) / 30, u = (29 * u + R) / 30, k = (9 * k + S * Oa()) / 10;
+        Ua();
+        oa();
+        xa || g.clearRect(0, 0, r, s);
+        xa ? (g.fillStyle = ia ? "#111111" : "#F2FBFF", g.globalAlpha = .05, g.fillRect(0, 0, r, s), g.globalAlpha = 1) : db();
+        v.sort(function(a, b) {
+            return a.size == b.size ? a.id - b.id : a.size - b.size
+        });
+        g.save();
+        g.translate(r / 2, s / 2);
+        g.scale(k, k);
+        g.translate(-t, -u);
+        DrawBorders(g, ia);
+        for (d = 0; d < I.length; d++) I[d].B(g);
+        for (d = 0; d < v.length; d++) v[d].B(g);
+        if (ta) {
+            ca = (3 * ca + ra) / 4;
+            da = (3 * da + sa) / 4;
+            g.save();
+            g.strokeStyle =
+                "#FFAAAA";
+            g.lineWidth = 10;
+            g.lineCap = "round";
+            g.lineJoin = "round";
+            g.globalAlpha = .5;
+            g.beginPath();
+            for (d = 0; d < n.length; d++) g.moveTo(n[d].x, n[d].y), g.lineTo(ca, da);
+            g.stroke();
+            g.restore()
+        }
+        g.restore();
+        x && x.width && g.drawImage(x, r - x.width - 10, 10);
+        DrawMinimap(g, n);
+        J = Math.max(J, eb());
+        0 != J && (null == ja && (ja = new ka(24, "#FFFFFF")), ja.u("Score: " + ~~(J / 100)), c = ja.H(), a = c.width, g.globalAlpha = .2, g.fillStyle = "#000000", g.fillRect(10, s - 10 - 24 - 10, a + 10, 34), g.globalAlpha = 1, g.drawImage(c, 15, s - 10 - 24 - 5));
+        fb();
+        b = Date.now() - b;
+        b > 1E3 / 60 ? z -= .01 : b < 1E3 /
+            65 && (z += .01);.4 > z && (z = .4);
+        1 < z && (z = 1)
+    }
 
-                var badAngles = [];
+    function db() {
+        g.fillStyle = ia ? "#111111" : "#F2FBFF";
+        g.fillRect(0, 0, r, s);
+        g.save();
+        g.strokeStyle = ia ? "#AAAAAA" : "#000000";
+        g.globalAlpha = .2;
+        g.scale(k, k);
+        for (var a = r / k, b = s / k, c = -.5 + (-t + a / 2) % 50; c < a; c += 50) g.beginPath(), g.moveTo(c, 0), g.lineTo(c, b), g.stroke();
+        for (c = -.5 + (-u + b / 2) % 50; c < b; c += 50) g.beginPath(), g.moveTo(0, c), g.lineTo(a, c), g.stroke();
+        g.restore()
+    }
 
-                var isSafeSpot = true;
-                var isMouseSafe = true;
+    function fb() {
+        if (Ca && ya.width) {
+            var a = r / 5;
+            g.drawImage(ya, 5, 5, a, a)
+        }
+    }
 
-                var clusterAllFood = clusterFood(allPossibleFood, player[0].oSize);
+    function eb() {
+        for (var a = 0, b = 0; b < n.length; b++) a += n[b].n * n[b].n;
+        return a
+    }
 
-                for (var i = 0; i < allPossibleThreats.length; i++) {
-                    var offsetX = player[0].x;
-                    var offsetY = player[0].y;
-
-                    var enemyAngleStuff = getEdgeLinesFromPoint(player[0], allPossibleThreats[i]);
-
-                    var leftAngle = enemyAngleStuff[0];
-                    var rightAngle = rangeToAngle(enemyAngleStuff);
-                    var difference = enemyAngleStuff[1];
-
-                    drawPoint(enemyAngleStuff[2][0], enemyAngleStuff[2][1], 3, "");
-                    drawPoint(enemyAngleStuff[3][0], enemyAngleStuff[3][1], 3, "");
-
-                    badAngles.push([leftAngle, difference]);
-
-                    //console.log("Adding badAngles: " + leftAngle + ", " + rightAngle + " diff: " + difference);
-
-                    var lineLeft = followAngle(leftAngle, player[0].x, player[0].y, 200 + player[0].size - i * 10);
-                    var lineRight = followAngle(rightAngle, player[0].x, player[0].y, 200 + player[0].size - i * 10);
-                    if (getCells().hasOwnProperty(allPossibleThreats[i].id)) {
-                        drawLine(player[0].x, player[0].y, lineLeft[0], lineLeft[1], 0);
-                        drawLine(player[0].x, player[0].y, lineRight[0], lineRight[1], 0);
-                        drawArc(lineLeft[0], lineLeft[1], lineRight[0], lineRight[1], player[0].x, player[0].y, 0);
-                    } else {
-                        drawLine(player[0].x, player[0].y, lineLeft[0], lineLeft[1], 3);
-                        drawLine(player[0].x, player[0].y, lineRight[0], lineRight[1], 3);
-                        drawArc(lineLeft[0], lineLeft[1], lineRight[0], lineRight[1], player[0].x, player[0].y, 3);
+    function La() {
+        x = null;
+        if (null != y || 0 != B.length)
+            if (null != y || la) {
+                x = document.createElement("canvas");
+                var a = x.getContext("2d"),
+                    b = 60,
+                    b = null == y ? b + 24 * B.length : b + 180,
+                    c = Math.min(200, .3 * r) / 200;
+                x.width = 200 * c;
+                x.height = b * c;
+                a.scale(c, c);
+                a.globalAlpha = .4;
+                a.fillStyle = "#000000";
+                a.fillRect(0, 0, 200, b);
+                a.globalAlpha = 1;
+                a.fillStyle = "#FFFFFF";
+                c = null;
+                c = "Leaderboard";
+                a.font = "30px Ubuntu";
+                a.fillText(c, 100 - a.measureText(c).width / 2, 40);
+                if (null == y)
+                    for (a.font = "20px Ubuntu", b = 0; b < B.length; ++b) c = B[b].name || "An unnamed cell",
+                        la || (c = "An unnamed cell"), -1 != G.indexOf(B[b].id) ? (n[0].name && (c = n[0].name), a.fillStyle = "#FFAAAA") : a.fillStyle = "#FFFFFF", c = b + 1 + ". " + c, a.fillText(c, 100 - a.measureText(c).width / 2, 70 + 24 * b);
+                else
+                    for (b = c = 0; b < y.length; ++b) {
+                        var d = c + y[b] * Math.PI * 2;
+                        a.fillStyle = gb[b + 1];
+                        a.beginPath();
+                        a.moveTo(100, 140);
+                        a.arc(100, 140, 80, c, d, !1);
+                        a.fill();
+                        c = d
                     }
-                    //drawPoint(lineLeft[0], lineLeft[1], 0, "Left 0 - " + i);
-                    //drawPoint(lineRight[0], lineRight[1], 0, "Right 1 - " + i);
-                }
+            }
+    }
 
-                var goodAngles = [];
-                //TODO: Add wall angles here. Hardcoding temporary values.
-                if (player[0].x < 1000 && badAngles.length > 0) {
-                    //LEFT
-                    //console.log("Left");
-                    var wallI = 1;
-                    if (!interNodes.hasOwnProperty(wallI)) {
-                        console.log("Creating Wall");
-                        var newX = -100 - screenDistance();
-                        console.log("Got distance");
-                        var n = f.createFake(wallI, newX, player[0].y, player[0].size * 10, "#000", false, "Left Wall");
-                        console.log("n ID: " + n.id);
-                        delete getCells()[wallI];
-                        getCellsArray().pop();
+    function va(a, b, c, d, e, m) {
+        this.id = a;
+        this.p = this.x = b;
+        this.q = this.y = c;
+        this.o = this.size = d;
+        this.color = e;
+        this.a = [];
+        this.l = [];
+        this.S();
+        this.Z(m)
+    }
 
-                        interNodes[wallI] = n;
-                        interNodes[wallI].nx = newX;
-                        interNodes[wallI].ny = player[0].ny;
-                        interNodes[wallI].nSize = player[0].oSize * 10;
-                        interNodes[wallI].updateTime = getUpdate();
-                        //console.log("Added corner enemy");
-                    } else {
-                        //console.log("Update Wall!");
-                        interNodes[wallI].updateTime = getUpdate();
-                        interNodes[wallI].y = player[0].y;
-                        interNodes[wallI].ny = player[0].ny;
-                    }
-                } else if (player[0].x < 1000 && interNodes.hasOwnProperty(1)) {
-                    delete interNodes[1];
-                }
-                if (player[0].y < 1000 && badAngles.length > 0) {
-                    //TOP
-                    //console.log("TOP");
-                    var wallI = 2;
-                    if (!interNodes.hasOwnProperty(wallI)) {
-                        console.log("Creating Wall");
-                        var newY = -100 - screenDistance();
-                        console.log("Got distance");
-                        var n = f.createFake(wallI, player[0].x, newY, player[0].size * 10, "#000", false, "Top Wall");
-                        console.log("n ID: " + n.id);
-                        delete getCells()[wallI];
-                        getCellsArray().pop();
-
-                        interNodes[wallI] = n;
-                        interNodes[wallI].nx = player[0].nx;
-                        interNodes[wallI].ny = newY;
-                        interNodes[wallI].nSize = player[0].oSize * 10;
-                        interNodes[wallI].updateTime = getUpdate();
-                        //console.log("Added corner enemy");
-                    } else {
-                        //console.log("Update Wall!");
-                        interNodes[wallI].updateTime = getUpdate();
-                        interNodes[wallI].x = player[0].x;
-                        interNodes[wallI].nx = player[0].nx;
-                    }
-                } else if (player[0].y < 1000 && interNodes.hasOwnProperty(2)) {
-                    delete interNodes[2];
-                }
-                if (player[0].x > 11180 - 1000 && badAngles.length > 0) {
-                    //RIGHT
-                    //console.log("RIGHT");
-                    var wallI = 3;
-                    if (!interNodes.hasOwnProperty(wallI)) {
-                        console.log("Creating Wall");
-                        var newX = 11180 + 100 + screenDistance();
-                        console.log("Got distance");
-                        var n = f.createFake(wallI, newX, player[0].y, player[0].size * 10, "#000", false, "Right Wall");
-                        console.log("n ID: " + n.id);
-                        delete getCells()[wallI];
-                        getCellsArray().pop();
-
-                        interNodes[wallI] = n;
-                        interNodes[wallI].nx = newX;
-                        interNodes[wallI].ny = player[0].ny;
-                        interNodes[wallI].nSize = player[0].oSize * 10;
-                        interNodes[wallI].updateTime = getUpdate();
-                        //console.log("Added corner enemy");
-                    } else {
-                        //console.log("Update Wall!");
-                        interNodes[wallI].updateTime = getUpdate();
-                        interNodes[wallI].y = player[0].y;
-                        interNodes[wallI].ny = player[0].ny;
-                    }
-                } else if (player[0].x > 11180 - 1000 && interNodes.hasOwnProperty(3)) {
-                    delete interNodes[3];
-                }
-                if (player[0].y > 11180 - 1000 && badAngles.length > 0) {
-                    //BOTTOM
-                    //console.log("BOTTOM");
-                    var wallI = 4;
-                    if (!interNodes.hasOwnProperty(wallI)) {
-                        console.log("Creating Wall");
-                        var newY = 11180 + 100 + screenDistance();
-                        console.log("Got distance");
-                        var n = f.createFake(wallI, player[0].x, newY, player[0].size * 10, "#000", false, "Bottom Wall");
-                        console.log("n ID: " + n.id);
-                        delete getCells()[wallI];
-                        getCellsArray().pop();
-
-                        interNodes[wallI] = n;
-                        interNodes[wallI].nx = player[0].nx;
-                        interNodes[wallI].ny = newY;
-                        interNodes[wallI].nSize = player[0].oSize * 10;
-                        interNodes[wallI].updateTime = getUpdate();
-                        //console.log("Added corner enemy");
-                    } else {
-                        //console.log("Update Wall!");
-                        interNodes[wallI].updateTime = getUpdate();
-                        interNodes[wallI].x = player[0].x;
-                        interNodes[wallI].nx = player[0].nx;
-                    }
-                } else if (player[0].y > 11180 - 1000 && interNodes.hasOwnProperty(4)) {
-                    delete interNodes[4];
-                }
-
-                //console.log("1) Good Angles: " + goodAngles.length + " Bad Angles: " + badAngles.length);
-                //TODO: Step 1: Write code to substract angle ranges.
-                //console.log("---");
-                var sortedInterList = [];
-
-                for (var i = 0; i < badAngles.length; i++) {
-
-                    var tempGroup = seperateAngle(badAngles[i]);
-
-                    addSorted(sortedInterList, tempGroup[0]);
-                    addSorted(sortedInterList, tempGroup[1]);
-
-                }
-
-                //console.log("Bad angles added!");
-
-                removeDuplicates(sortedInterList);
-                //console.log("Duplicates removed!");
-
-                goodAngles = mergeAngles(sortedInterList);
-                //console.log("Angles merged");
-
-                for (var i = 0; i < goodAngles.length; i++) {
-                    if (goodAngles[i][0] != goodAngles[i][1].mod(360)) {
-
-                        var line1 = followAngle(goodAngles[i][0], player[0].x, player[0].y, 100 + player[0].size);
-                        var line2 = followAngle((goodAngles[i][0] + goodAngles[i][1]).mod(360), player[0].x, player[0].y, 100 + player[0].size);
-                        drawLine(player[0].x, player[0].y, line1[0], line1[1], 1);
-                        drawLine(player[0].x, player[0].y, line2[0], line2[1], 1);
-
-                        drawArc(line1[0], line1[1], line2[0], line2[1], player[0].x, player[0].y, 1);
-
-                        //drawPoint(player[0].x, player[0].y, 2, "");
-
-                        drawPoint(line1[0], line1[1], 0, "" + i + ": 0");
-                        drawPoint(line2[0], line2[1], 0, "" + i + ": 1");
-                    }
-                }
-
-                if (goodAngles.length > 0) {
-                    var bIndex = goodAngles[0];
-                    var biggest = goodAngles[0][1];
-                    for (var i = 1; i < goodAngles.length; i++) {
-                        var size = goodAngles[i][1];
-                        if (size > biggest) {
-                            biggest = size;
-                            bIndex = goodAngles[i];
+    function ka(a, b, c, d) {
+        a && (this.r = a);
+        b && (this.O = b);
+        this.Q = !!c;
+        d && (this.s = d)
+    }
+              
+                getTargetColor: function(cells, game_mode, is_virus){
+                    var color = {'fill':this.color, 'stroke':this.color};
+                    var mass = this.size * this.size;
+                    if (show_targeting_colors && mass > 400) {
+                        var is_teams = (":teams" == game_mode);
+                        var smallest = Math.min.apply(null, cells.map(function(e) {
+                            return e.size*e.size;
+                        }));
+                        
+                        if (this[is_virus] || 0 === cells.length){
+                            color.fill = color.stroke = "#666666";
                         }
-                    }
-                    var perfectAngle = (bIndex[0] + bIndex[1] / 2).mod(360);
-                    //console.log("perfectAngle " + perfectAngle);
-                    var line1 = followAngle(perfectAngle, player[0].x, player[0].y, 300);
-
-                    var stuffToEat = false;
-
-                    for (var i = 0; i < clusterAllFood.length; i++) {
-                        //console.log("Before: " + clusterAllFood[i][2]);
-                        //This is the cost function. Higher is better.
-
-                        var clusterAngle = getAngle(clusterAllFood[i][0], clusterAllFood[i][1], player[0].x, player[0].y);
-
-                        var angleValue = valueAngleBased(clusterAngle, bIndex);
-
-                        if (angleValue > 0) {
-                            clusterAllFood[i][2] = clusterAllFood[i][2] * 6 - computeDistance(clusterAllFood[i][0], clusterAllFood[i][1], player[0].x, player[0].y);
-                            stuffToEat = true;
-                            clusterAllFood[i][3] = true;
-                        } else {
-                            clusterAllFood[i][2] = -1;
-                            clusterAllFood[i][3] = false;
+                        else if(~cells.indexOf(this) || is_teams && this.isTeamColor(cells)){
+                            color.fill = "#3371FF";
+                            if (!is_teams) color.stroke = "#3371FF";
                         }
-
-
-                        if (angleValue > 0) {
-
-                            drawPoint(clusterAllFood[i][0], clusterAllFood[i][1], 1, "");
-                            //drawPoint(clusterAllFood[i][0], clusterAllFood[i][1], 1, "" + clusterAllFood[i][2]);
-                        } else {
-                            drawPoint(clusterAllFood[i][0], clusterAllFood[i][1], 0, "");
+                        else if(mass > 2.5 * smallest){
+                            color.fill = "#FF3C3C";
+                            if (!is_teams) color.stroke = "#FF3C3C";
                         }
-                        //console.log("After: " + clusterAllFood[i][2]);
+                        else if(.74 * mass > smallest){
+                            color.fill = "#FFBF3D";
+                            if (!is_teams) color.stroke = "#FFBF3D";
+                        }
+                        else if(mass > .74 * smallest){
+                            color.fill = "#FFFF00";
+                            if (!is_teams) color.stroke = "#FFFF00";
+                        }
+                        else if(mass > .4 * smallest){
+                            color.fill = "#00AA00";
+                            if (!is_teams) color.stroke = "#00AA00";
+                        }
+                        else{
+                            color.fill = "#44F720";
+                            if (!is_teams) color.stroke = "#44F720";
+                        }                            
                     }
-
-                    var bestFoodI = null;
-                    if (stuffToEat) {
-                        var bestFood = clusterAllFood[0][2];
-                        for (var i = 0; i < clusterAllFood.length; i++) {
-                            if (bestFoodI != null && bestFood <= clusterAllFood[i][2] && clusterAllFood[i][3]) {
-                                bestFood = clusterAllFood[i][2];
-                                bestFoodI = clusterAllFood[i];
-                            } else if (bestFoodI == null && clusterAllFood[i][3]) {
-                                bestFood = clusterAllFood[i][2];
-                                bestFoodI = clusterAllFood[i];
+                    return color;
+                },                
+                B: function(a) {
+                    var color = this.getTargetColor(n, N, 'W');
+                    if (this.J()) {
+                        var b = 0 != this.id && !this.d && !this.j && .4 > k;
+                        5 > this.D() && (b = !0);
+                        if (this.N && !b)
+                            for (var c = 0; c < this.a.length; c++) this.a[c].e = this.size;
+                        this.N = b;
+                        a.save();
+                        this.ba = H;
+                        c = this.L();
+                        this.A && (a.globalAlpha *= 1 - c);
+                        a.lineWidth = 10;
+                        a.lineCap = "round";
+                        a.lineJoin = this.d ? "miter" : "round";
+                        za ? (a.fillStyle = "#FFFFFF", a.strokeStyle = "#AAAAAA") : (a.fillStyle = color.fill, a.strokeStyle = color.stroke);
+                        if (b) a.beginPath(), a.arc(this.x, this.y, this.size, 0, 2 * Math.PI, !1);
+                        else {
+                            this.ha();
+                            a.beginPath();
+                            var d = this.D();
+                            a.moveTo(this.a[0].x, this.a[0].y);
+                            for (c = 1; c <= d; ++c) {
+                                var e = c % d;
+                                a.lineTo(this.a[e].x, this.a[e].y)
                             }
                         }
-                    }
-
-                    //console.log("Best Value: " + clusterAllFood[bestFoodI][2]);
-                    if (stuffToEat && bestFoodI[3]) {
-                        tempMoveX = bestFoodI[0];
-                        tempMoveY = bestFoodI[1];
-                        drawLine(player[0].x, player[0].y, bestFoodI[0], bestFoodI[1], 1);
-                    } else {
-                        if (bestFoodI != null) {
-                            console.log("Nothing to eat " + stuffToEat + " or " + bestFoodI[3]);
-                        } else {
-                            console.log("Nothing to eat " + stuffToEat + " or doesn't exist");
+                        a.closePath();
+                        d = this.name.toLowerCase();
+                        !this.j && Pa && ":teams" != N ? -1 != Aa.indexOf(d) ? (K.hasOwnProperty(d) || (K[d] = new Image, K[d].src = "skins/" + d + ".png"), c = 0 != K[d].width && K[d].complete ? K[d] : null) : c = null : c = null;
+                        c = (e = c) ? -1 != ib.indexOf(d) : !1;
+                        b || a.stroke();
+                        a.fill();
+                        null == e || c || (a.save(), a.clip(), a.drawImage(e, this.x - this.size, this.y - this.size, 2 * this.size, 2 * this.size), a.restore());
+                        (za || 15 < this.size) && !b && (a.strokeStyle = "#000000", a.globalAlpha *= .1, a.stroke());
+                        a.globalAlpha = 1;
+                        null != e && c && a.drawImage(e, this.x - 2 * this.size, this.y - 2 * this.size, 4 * this.size, 4 * this.size);
+                        c = -1 != n.indexOf(this);
+                        b = ~~this.y;
+                        if ((la || c) && this.name && this.k && (null == e || -1 == hb.indexOf(d))) {
+                            e = this.k;
+                            e.u(this.name);
+                            e.I(this.h());
+                            d = Math.ceil(10 * k) / 10;
+                            e.$(d);
+                            var e = e.H(),
+                                m = ~~(e.width / d),
+                                h = ~~(e.height / d);
+                            a.drawImage(e, ~~this.x - ~~(m / 2), b - ~~(h / 2), m, h);
+                            b += e.height / 2 / d + 4
                         }
-                        drawLine(player[0].x, player[0].y, line1[0], line1[1], 7);
-                        tempMoveX = line1[0];
-                        tempMoveY = line1[1];
+                        Qa && (c || (0 == n.length || show_opponent_size) && 20 < this.size) && (null == this.K && (this.K = new ka(this.h() / 2, "#FFFFFF", !0, "#000000")), c = this.K, c.I(this.h() / 2), c.u(~~(this.size * this.size / 100)), d = Math.ceil(10 * k) / 10, c.$(d), e = c.H(), m = ~~(e.width / d), h = ~~(e.height / d), a.drawImage(e, ~~this.x - ~~(m / 2), b - ~~(h / 2), m, h));
+                        a.restore()
                     }
-
-                    //drawLine(player[0].x, player[0].y, tempMoveX, tempMoveY, 1);
-                } else {
-                    for (var i = 0; i < clusterAllFood.length; i++) {
-                        //console.log("mefore: " + clusterAllFood[i][2]);
-                        //This is the cost function. Higher is better.
-
-                        var clusterAngle = getAngle(clusterAllFood[i][0], clusterAllFood[i][1], player[0].x, player[0].y);
-
-                        clusterAllFood[i][2] = clusterAllFood[i][2] * 6 - computeDistance(clusterAllFood[i][0], clusterAllFood[i][1], player[0].x, player[0].y);
-                        //console.log("Current Value: " + clusterAllFood[i][2]);
-
-                        //(goodAngles[bIndex][1] / 2 - (Math.abs(perfectAngle - clusterAngle)));
-
-                        clusterAllFood[i][3] = clusterAngle;
-
-
-                        drawPoint(clusterAllFood[i][0], clusterAllFood[i][1], 1, "");
-                        //console.log("After: " + clusterAllFood[i][2]);
-                    }
-
-                    var bestFoodI = 0;
-                    var bestFood = clusterAllFood[0][2];
-                    for (var i = 1; i < clusterAllFood.length; i++) {
-                        if (bestFood < clusterAllFood[i][2]) {
-                            bestFood = clusterAllFood[i][2];
-                            bestFoodI = i;
-                        }
-                    }
-
-                    //console.log("Best Value: " + clusterAllFood[bestFoodI][2]);
-
-                    tempMoveX = clusterAllFood[bestFoodI][0];
-                    tempMoveY = clusterAllFood[bestFoodI][1];
-                    drawLine(player[0].x, player[0].y, tempMoveX, tempMoveY, 1);
                 }
-
-                drawPoint(tempPoint[0], tempPoint[1], tempPoint[2], "");
-                //drawPoint(tempPoint[0], tempPoint[1], tempPoint[2], "" + Math.floor(computeDistance(tempPoint[0], tempPoint[1], I, J)));
-                //drawLine(tempPoint[0], tempPoint[1], player[0].x, player[0].y, 6);
-                //console.log("Slope: " + slope(tempPoint[0], tempPoint[1], player[0].x, player[0].y) + " Angle: " + getAngle(tempPoint[0], tempPoint[1], player[0].x, player[0].y) + " Side: " + (getAngle(tempPoint[0], tempPoint[1], player[0].x, player[0].y) - 90).mod(360));
-                tempPoint[2] = 1;
-            }
-            //console.log("MOVING RIGHT NOW!");
-            return [tempMoveX, tempMoveY];
+            };
+            ka.prototype = {
+                w: "",
+                O: "#000000",
+                Q: !1,
+                s: "#000000",
+                r: 16,
+                m: null,
+                P: null,
+                g: !1,
+                v: 1,
+                I: function(a) {
+                    this.r != a && (this.r = a, this.g = !0)
+                },
+                $: function(a) {
+                    this.v != a && (this.v = a, this.g = !0)
+                },
+                setStrokeColor: function(a) {
+                    this.s != a && (this.s = a, this.g = !0)
+                },
+                u: function(a) {
+                    a != this.w && (this.w = a, this.g = !0)
+                },
+                H: function() {
+                    null == this.m && (this.m = document.createElement("canvas"), this.P = this.m.getContext("2d"));
+                    if (this.g) {
+                        this.g = !1;
+                        var a = this.m,
+                            b = this.P,
+                            c = this.w,
+                            d = this.v,
+                            e = this.r,
+                            m = e + "px Ubuntu";
+                        b.font = m;
+                        var h = ~~(.2 * e);
+                        a.width = (b.measureText(c).width +
+                            6) * d;
+                        a.height = (e + h) * d;
+                        b.font = m;
+                        b.scale(d, d);
+                        b.globalAlpha = 1;
+                        b.lineWidth = 3;
+                        b.strokeStyle = this.s;
+                        b.fillStyle = this.O;
+                        this.Q && b.strokeText(c, 3, e - h / 2);
+                        b.fillText(c, 3, e - h / 2)
+                    }
+                    return this.m
+                }
+            };
+            Date.now || (Date.now = function() {
+                return (new Date).getTime()
+            });
+            var Va = {
+                ca: function(a) {
+                    function b(a, b, c, d, e) {
+                        this.x = a;
+                        this.y = b;
+                        this.f = c;
+                        this.c = d;
+                        this.depth = e;
+                        this.items = [];
+                        this.b = []
+                    }
+                    var c = a.da || 2,
+                        d = a.ea || 4;
+                    b.prototype = {
+                        x: 0,
+                        y: 0,
+                        f: 0,
+                        c: 0,
+                        depth: 0,
+                        items: null,
+                        b: null,
+                        C: function(a) {
+                            for (var b = 0; b < this.items.length; ++b) {
+                                var c = this.items[b];
+                                if (c.x >= a.x && c.y >= a.y && c.x < a.x + a.f && c.y < a.y + a.c) return !0
+                            }
+                            if (0 != this.b.length) {
+                                var d = this;
+                                return this.V(a, function(b) {
+                                    return d.b[b].C(a)
+                                })
+                            }
+                            return !1
+                        },
+                        t: function(a, b) {
+                            for (var c = 0; c < this.items.length; ++c) b(this.items[c]);
+                            if (0 != this.b.length) {
+                                var d = this;
+                                this.V(a, function(c) {
+                                    d.b[c].t(a, b)
+                                })
+                            }
+                        },
+                        i: function(a) {
+                            0 != this.b.length ? this.b[this.U(a)].i(a) : this.items.length >= c && this.depth < d ? (this.aa(), this.b[this.U(a)].i(a)) : this.items.push(a)
+                        },
+                        U: function(a) {
+                            return a.x < this.x + this.f / 2 ? a.y < this.y + this.c / 2 ? 0 : 2 : a.y < this.y + this.c / 2 ? 1 : 3
+                        },
+                        V: function(a, b) {
+                            return a.x < this.x + this.f / 2 && (a.y < this.y + this.c / 2 && b(0) || a.y >= this.y + this.c / 2 && b(2)) || a.x >= this.x + this.f / 2 && (a.y < this.y + this.c / 2 && b(1) || a.y >= this.y + this.c / 2 && b(3)) ? !0 : !1
+                        },
+                        aa: function() {
+                            var a = this.depth + 1,
+                                c = this.f / 2,
+                                d = this.c / 2;
+                            this.b.push(new b(this.x, this.y, c, d, a));
+                            this.b.push(new b(this.x + c, this.y, c, d, a));
+                            this.b.push(new b(this.x, this.y + d, c, d, a));
+                            this.b.push(new b(this.x + c, this.y + d, c, d, a));
+                            a = this.items;
+                            this.items = [];
+                            for (c = 0; c < a.length; c++) this.i(a[c])
+                        },
+                        clear: function() {
+                            for (var a = 0; a < this.b.length; a++) this.b[a].clear();
+                            this.items.length = 0;
+                            this.b.length = 0
+                        }
+                    };
+                    var e = {
+                        x: 0,
+                        y: 0,
+                        f: 0,
+                        c: 0
+                    };
+                    return {
+                        root: new b(a.X, a.Y, a.fa - a.X, a.ga - a.Y, 0),
+                        i: function(a) {
+                            this.root.i(a)
+                        },
+                        t: function(a, b) {
+                            this.root.t(a, b)
+                        },
+                        ia: function(a, b, c, d, f) {
+                            e.x = a;
+                            e.y = b;
+                            e.f = c;
+                            e.c = d;
+                            this.root.t(e, f)
+                        },
+                        C: function(a) {
+                            return this.root.C(a)
+                        },
+                        clear: function() {
+                            this.root.clear()
+                        }
+                    }
+                }
+            };
+            l(function() {
+                function a() {
+                    0 < n.length && (b.color = n[0].color);
+                    d.clearRect(0, 0, 32, 32);
+                    d.save();
+                    d.translate(16, 16);
+                    d.scale(.4, .4);
+                    b.B(d);
+                    d.restore();
+                    ++e;
+                    e %= 10;
+                    if (0 == e) {
+                        var a = document.getElementById("favicon"),
+                            f = a.cloneNode(!0);
+                        f.setAttribute("href", c.toDataURL("image/png"));
+                        a.parentNode.replaceChild(f, a)
+                    }
+                }
+                var b = new va(0, 0, 0, 32, "#ED1C24", ""),
+                    c = document.createElement("canvas");
+                c.width = 32;
+                c.height = 32;
+                var d = c.getContext("2d"),
+                    e = 0;
+                a();
+                setInterval(a, 1E3 / 60)
+            });
+            f.onload = Ta
         }
     }
-
-    function screenToGameX(x) {
-        return (x - getWidth() / 2) / getRatio() + getX();
-    }
-
-    function screenToGameY(y) {
-        return (y - getHeight() / 2) / getRatio() + getY();;
-    }
-
-    function drawPoint(x_1, y_1, drawColor, text) {
-        f.drawPoint(x_1, y_1, drawColor, text);
-    }
-
-    function drawArc(x_1, y_1, x_2, y_2, x_3, y_3, drawColor) {
-        f.drawArc(x_1, y_1, x_2, y_2, x_3, y_3, drawColor);
-    }
-
-    function drawLine(x_1, y_1, x_2, y_2, drawColor) {
-        f.drawLine(x_1, y_1, x_2, y_2, drawColor);
-    }
-
-    function screenDistance() {
-        var temp = f.getScreenDistance();
-        return temp;
-    }
-
-    function getDarkBool() {
-        return f.getDarkBool();
-    }
-
-    function getMassBool() {
-        return f.getMassBool();
-    }
-
-    function getMemoryCells() {
-        return f.getMemoryCells();
-    }
-
-    function getCellsArray() {
-        return f.getCellsArray();
-    }
-
-    function getCells() {
-        return f.getCells();
-    }
-
-    function getPlayer() {
-        return f.getPlayer();
-    }
-
-    function getWidth() {
-        return f.getWidth();
-    }
-
-    function getHeight() {
-        return f.getHeight();
-    }
-
-    function getRatio() {
-        return f.getRatio();
-    }
-
-    function getOffsetX() {
-        return f.getOffsetX();
-    }
-
-    function getOffsetY() {
-        return f.getOffsetY();
-    }
-
-    function getX() {
-        return f.getX();
-    }
-
-    function getY() {
-        return f.getY();
-    }
-
-    function getPointX() {
-        return f.getPointX();
-    }
-
-    function getPointY() {
-        return f.getPointY();
-    }
-
-    function getMouseX() {
-        return f.getMouseX();
-    }
-
-    function getMouseY() {
-        return f.getMouseY();
-    }
-
-    function getUpdate() {
-        return f.getLastUpdate();
-    }
-})(window, jQuery);
+})(window, window.jQuery);
